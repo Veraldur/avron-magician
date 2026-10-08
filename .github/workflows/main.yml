@@ -1,0 +1,43 @@
+name: Build Avron Magician for Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install 7-Zip
+        run: choco install 7zip -y
+
+      - name: Extract game source
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path game-source
+          7z x "game-source/m3.7z" -ogame-source/extracted
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Windows application
+        run: npm run tauri build
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: avron-magician-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
